@@ -1,0 +1,34 @@
+{
+    "name": "task-tracker-backend",
+    "type": "commonjs",
+    "version": "1.0.0",
+    "description": "Task Tracker API",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon server.js",
+        "dev": "nodemon server.js"
+    },
+    "dependencies": {
+        "@mtproto/core": "^6.3.0",
+        "axios": "^1.10.0",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "express-async-handler": "^1.2.0",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^7.8.7",
+        "multer": "^1.4.5-lts.2",
+        "node-cron": "^4.0.7",
+        "nodemailer": "^6.10.1",
+        "qrcode": "^1.5.4",
+        "socket.io": "^4.8.1",
+        "tdl": "^8.0.2",
+        "tdl-tdlib-addon": "^1.2.2",
+        "telegram": "^2.26.22",
+        "ws": "^8.18.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.9"
+    }
+}
