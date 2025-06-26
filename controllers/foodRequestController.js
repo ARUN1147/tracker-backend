@@ -63,8 +63,15 @@ const submitFoodRequest = asyncHandler(async (req, res) => {
 
   // Check if meal is enabled and within time range
   if (mealSettings.autoSwitch) {
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    // Get the current time in the correct timezone ('Asia/Kolkata')
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+
+    const currentTime = formatter.format(new Date());
     
     if (currentTime < mealSettings.openTime || currentTime >= mealSettings.closeTime) {
       res.status(400);
@@ -115,7 +122,6 @@ const submitFoodRequest = asyncHandler(async (req, res) => {
 
   res.status(201).json(populatedRequest);
 });
-
 // Helper function to get meal-specific settings
 const getMealSettings = (settings, mealType) => {
   switch (mealType) {

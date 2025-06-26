@@ -1,50 +1,6 @@
-require('dotenv').config();
 const asyncHandler = require('express-async-handler');
 const Comment = require('../models/Comment');
 const Worker = require('../models/Worker');
-
-const readline            = require('readline');
-const { TelegramClient } = require('telegram');
-const { StringSession }    = require('telegram/sessions');
-// your API_ID / API_HASH from my.telegram.org:
-const API_ID = 26389181;
-const API_HASH = '86a046a2b78806aa42f056319e9b21e9';
-const stringSession = new StringSession(process.env.TELEGRAM_SESSION || '');
-const tgClient = new TelegramClient(stringSession, API_ID, API_HASH, {
-     connectionRetries: 5,
-     useWSS: true,           // ⇐ use WebSocket (port 443) instead of TCP/80
-     // proxy: {             // ⇐ optionally, if you run your own MTProto proxy
-     //   ip:   process.env.MTPROXY_HOST,
-     //   port: Number(process.env.MTPROXY_PORT),
-     //   MTProxy: true,
-     //   secret: process.env.MTPROXY_SECRET,
-     // },
-   });
-
-
-(async () => {
-  // if no saved session, do interactive login once
-  if (!process.env.TELEGRAM_SESSION) {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const question = q => new Promise(res => rl.question(q, res));
-
-    await tgClient.start({
-      phoneNumber: async () => process.env.TELEGRAM_PHONE,
-      phoneCode:   async () => await question('Enter Telegram SMS code: '),
-      password:    async () => process.env.TELEGRAM_2FA,
-      onError:     err => console.error('Telegram error', err)
-    });
-
-    rl.close();
-    console.log('🔌 Telegram client ready (first login)');
-    console.log('\n⚡ COPY this into your .env as TELEGRAM_SESSION:\n');
-    console.log(tgClient.session.save(), '\n');
-  } else {
-    // headless reconnect using saved session
-    await tgClient.start({ onError: err => console.error('Telegram error', err) });
-    console.log('🔌 Telegram client ready (reconnected)');
-  }
-})();
 
 // @desc    Get comments for a worker
 // @route   GET /api/comments/worker/:workerId
@@ -61,12 +17,8 @@ const getWorkerComments = asyncHandler(async (req, res) => {
 // @access  Private
 const getMyComments = asyncHandler(async (req, res) => {
   const comments = await Comment.find({ worker: req.user._id })
-   .populate({
-     path: 'worker',
-     populate: { path: 'department', select: 'name' },
-     select:   'name department photo telegramId'
-   })
-   .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 });
+
   // Mark all comments and replies as read
   for (const comment of comments) {
     comment.isNew = false;
@@ -99,7 +51,7 @@ const getAllComments = asyncHandler(async (req, res) => {
         path: 'department',
         select: 'name'
       },
-      select: 'name department photo username telegramId' // Add more fields
+      select: 'name department photo username' // Add more fields
     })
     .sort({ createdAt: -1 });
 
@@ -143,13 +95,13 @@ const createComment = asyncHandler(async (req, res) => {
 
     // Populate worker details
     await comment.populate({
-            path: 'worker',
-            populate: {
-              path: 'department',
-              select: 'name'
-            },
-            select: 'name department photo telegramId'
-          });
+      path: 'worker',
+      populate: {
+        path: 'department',
+        select: 'name'
+      },
+      select: 'name department photo'
+    });
 
     console.log('Comment Created Successfully:', comment);
 
@@ -198,25 +150,6 @@ const addReply = asyncHandler(async (req, res) => {
   comment.isNew = true;
 
   await comment.save();
-
- // re-populate so worker.telegramId is available to the client
- await comment.populate({
-      path: 'worker',
-      populate: { path: 'department', select: 'name' },
-      select: 'name department photo username telegramId'
-    });
-
-  const toPeer = comment.worker.telegramId;
-  if (toPeer) {
-    try {
-      await tgClient.sendMessage(
-        toPeer.startsWith('@') ? toPeer : BigInt(toPeer),
-        { message: text }
-      );
-    } catch (err) {
-      console.error('📩 Telegram send failed:', err);
-    }
-  }
 
   res.status(201).json(comment);
 });
@@ -279,4 +212,3 @@ module.exports = {
   getUnreadAdminReplies,
   markCommentAsRead
 };
-module.exports.tgClient = tgClient;

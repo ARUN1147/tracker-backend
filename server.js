@@ -1,21 +1,9 @@
-const dotenv = require('dotenv');
 const express = require('express');
-const cors    = require('cors');
-const http    = require('http');
-const { Server } = require('socket.io');
-const app = express();
-
+const cors = require('cors');
+const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
-
-
-
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}));
-
 
 // Load env vars first
 dotenv.config();
@@ -39,8 +27,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 
-
-
+const app = express();
 
 // Configure CORS to allow requests from your client with credentials
 app.use(cors({
@@ -110,50 +97,9 @@ if (process.env.NODE_ENV === 'production' || process.env.ENABLE_SCHEDULERS === '
 // Error handler (should be last)
 app.use(errorHandler);
 
-
-const { NewMessage } = require('telegram/events');
-const { tgClient } = require('./controllers/commentController');
-
-
-// … your existing Express middleware, routes, etc.
-
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-      origin: 'http://localhost:3000',
-      methods: ['GET','POST'],
-      credentials: true
-    }
-  });
-
-io.on('connection', socket => {
-  console.log('🔥 socket connected:', socket.id);
-  socket.on('sendTelegramMessage', data => {
-    // call tgClient.sendMessage(…)
-  });
-});
-
-// Inbound: Telegram → browser
-tgClient.addEventHandler(async update => {
-    // only care about new incoming messages
-    if (update.className === 'UpdateNewMessage' && update.message) {
-      const { message } = update;
-      const fromId   = message.senderId?.userId ?? message.peerId?.userId;
-      let   fromName = fromId.toString();
-      try {
-        const user = await tgClient.getEntity(fromId);
-        fromName    = `${user.firstName||''} ${user.lastName||''}`.trim();
-      } catch {}
-  
-      io.emit('telegramMessage', {
-        from:      fromId.toString(),
-        fromName,
-        text:      message.message,
-        timestamp: message.date * 1000
-      });
-    }
-  }, new NewMessage({}));
-
-server.listen(process.env.PORT||5000, () => {
-  console.log('Server running on port', process.env.PORT||5000);
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🌟 Server running on port ${PORT}`);
+  console.log(`📧 Email service: ${process.env.EMAIL_USER ? 'Configured' : 'Not configured'}`);
+  console.log(`🗄️ Database: ${process.env.MONGO_URI ? 'Connected' : 'Not configured'}`);
 });
