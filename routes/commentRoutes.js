@@ -10,15 +10,16 @@ const {
   getUnreadAdminReplies,
   markCommentAsRead 
 } = require('../controllers/commentController');
-const { protect, adminOnly, adminOrWorker } = require('../middleware/authMiddleware');
+
+const { protect, adminOnly, adminOrWorker, workerOnly } = require('../middleware/authMiddleware');
 
 router.route('/').post(protect, createComment);
 router.route('/:subdomain').get(protect, adminOnly, getAllComments)
 
-router.get('/me', protect, getMyComments);
+router.get('/me', protect, workerOnly, getMyComments);
 router.get('/worker/:workerId', protect, adminOnly, getWorkerComments);
 router.post('/:id/replies', protect, addReply);
 router.put('/:id/read', protect, markCommentAsRead);
-router.get('/unread-admin-replies', protect, getUnreadAdminReplies);
+router.get('/unread-admin-replies', protect, workerOnly, getUnreadAdminReplies);
 router.put('/mark-admin-replies-read', protect, markAdminRepliesAsRead);
 module.exports = router;

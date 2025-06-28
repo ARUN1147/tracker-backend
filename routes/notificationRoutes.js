@@ -6,10 +6,11 @@ const {
   updateNotification,
   deleteNotification
 } = require('../controllers/notificationController');
-const { protect } = require('../middleware/authMiddleware');
+
+const { protect, workerOnly } = require('../middleware/authMiddleware');
 
 // Public route to get notifications by subdomain
-router.get('/:subdomain', readNotification);
+router.get('/:subdomain', protect, workerOnly, readNotification);
 
 // Admin-protected routes
 router.post('/', protect, createNotification);
